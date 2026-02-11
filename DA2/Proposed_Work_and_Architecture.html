@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Proposed Work and Architecture</title>
+
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            /* Academic standard */
+            line-height: 1.35;
+            /* Denser line height */
+            font-size: 11pt;
+            /* Smaller, standard academic size */
+            max-width: 800px;
+            /* Standard A4 width approx */
+            margin: 0 auto;
+            padding: 30px;
+            color: #000;
+            /* Pure black for print */
+            text-align: justify;
+            /* Academic justification */
+        }
+
+        h1 {
+            font-family: 'Arial', sans-serif;
+            font-size: 20pt;
+            font-weight: bold;
+            border-bottom: 2px solid #000;
+            padding-bottom: 5px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        h2 {
+            font-family: 'Arial', sans-serif;
+            font-size: 14pt;
+            color: #000;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 3px;
+            font-weight: bold;
+        }
+
+        h3 {
+            font-family: 'Arial', sans-serif;
+            font-size: 12pt;
+            color: #333;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-style: italic;
+        }
+
+        h4 {
+            font-size: 11pt;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        p {
+            margin-bottom: 10px;
+        }
+
+        ul,
+        ol {
+            margin-bottom: 10px;
+            margin-top: 5px;
+            padding-left: 25px;
+        }
+
+        li {
+            margin-bottom: 2px;
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 10pt;
+            background-color: #f0f0f0;
+            padding: 1px 3px;
+        }
+
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 9pt;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        .diagram {
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre;
+            font-size: 9pt;
+            line-height: 1;
+            background: #fff;
+            border: 1px solid #000;
+            padding: 10px;
+            margin: 15px 0;
+            display: block;
+            width: 100%;
+        }
+
+        hr {
+            margin: 20px 0;
+            border: 0;
+            border-top: 1px solid #000;
+        }
+
+        /* Citation style */
+        blockquote {
+            border-left: 3px solid #ccc;
+            margin: 10px 0;
+            padding-left: 10px;
+            font-style: italic;
+            color: #555;
+        }
+
+        @media print {
+            body {
+                max-width: 100%;
+                padding: 0;
+                margin: 1.5cm;
+                /* Standard print margins */
+            }
+
+            @page {
+                margin: 1.5cm;
+                size: A4;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <h1>Proposed Work and System Architecture Specification</h1>
+    <h2>1. Executive Summary</h2>
+    <p>This document outlines the technical specifications, architectural design, and implementation roadmap for DA2: an
+        <strong>Intelligent Permissioned Blockchain System</strong>. The proposed system integrates a high-performance,
+        asynchronous Proof-of-Work blockchain with a hybrid machine learning fraud detection engine. The primary goal is
+        to demonstrate a "Defense-in-Depth" strategy where financial transactions are not only cryptographically
+        verified but also behaviorally analyzed before being committed to the immutable ledger.</p>
+    <hr />
+    <h2>2. Methodology and Project Phases</h2>
+    <p>The project execution is divided into five distinct modules, following an Agile development methodology.</p>
+    <h3>2.1 Phase 1: Cryptographic Core &amp; Data Structures</h3>
+    <ul>
+        <li><strong>Block Structure</strong>: Implementation of a header-body structure.<ul>
+                <li><em>Header</em>: Index (int), Previous Hash (SHA256 hex), Timestamp (epoch), Nonce (int), Merkle
+                    Root (SHA256 hex).</li>
+                <li><em>Body</em>: List of Transaction objects.</li>
+            </ul>
+        </li>
+        <li><strong>Hashing Algorithm</strong>: Utilization of <code>hashlib.sha256</code> for double-hashing
+            (SHA256(SHA256(x))) to prevent length-extension attacks.</li>
+        <li><strong>Consensus</strong>: Implementation of a customizable Proof-of-Work algorithm where $H(block) &lt;
+            Target$. The difficulty is adjustable (default: 2 leading zeros) to simulate mining effort without excessive
+            CPU load during demonstration.</li>
+    </ul>
+    <h3>2.2 Phase 2: Intelligence &amp; Fraud Engine</h3>
+    <ul>
+        <li><strong>Data Pipeline</strong>: Ingestion of the Kaggle Credit Card Fraud dataset (284,807 transactions).
+        </li>
+        <li><strong>Preprocessing</strong>: Normalization of <code>Amount</code> using <code>StandardScaler</code> and
+            dimensionality reduction on PCA features (V1-V28).</li>
+        <li><strong>Model Training</strong>:<ol>
+                <li><strong>Random Forest</strong>: <code>n_estimators=100</code>, <code>max_depth=10</code>,
+                    <code>class_weight='balanced'</code>.</li>
+                <li><strong>XGBoost</strong>: <code>eta=0.1</code>, <code>max_depth=6</code>,
+                    <code>scale_pos_weight</code> optimized for recall.</li>
+            </ol>
+        </li>
+        <li><strong>Serialization</strong>: Models are saved as <code>.pkl</code> files using <code>joblib</code> for
+            sub-millisecond inference during runtime.</li>
+    </ul>
+    <h3>2.3 Phase 3: The Asynchronous Network Layer</h3>
+    <ul>
+        <li><strong>Concurrency Model</strong>: Adoption of Python's <code>asyncio</code> library to handle non-blocking
+            I/O.</li>
+        <li><strong>WebSocket Protocol</strong>: Implementation of a <code>websockets</code> server
+            (<code>ws://localhost:8765</code>) enabling bidirectional, full-duplex communication.</li>
+        <li><strong>Event Loop Management</strong>:<ul>
+                <li><em>Task A</em>: Listen for incoming client connections.</li>
+                <li><em>Task B</em>: Process incoming transaction messages.</li>
+                <li><em>Task C</em> (Background): The Miner Loop, running continuously to batch mempool transactions
+                    into blocks.</li>
+            </ul>
+        </li>
+    </ul>
+    <h3>2.4 Phase 4: Client Simulation Interfaces</h3>
+    <ul>
+        <li><strong>The Sender (Wallet Audit)</strong>: A CLI tool to construct JSON payloads. Includes a 'Stress Test'
+            mode injecting 50+ TPS to validate system throughput.</li>
+        <li><strong>The Receiver (Merchant Node)</strong>: specific logic to parse and verify incoming block headers and
+            display transaction validity confidence (0-100%).</li>
+        <li><strong>The Dashboard (Network Monitor)</strong>: A real-time terminal UI using ANSI escape sequences to
+            plot block height, mempool congestion, and cumulative fraud statistics.</li>
+    </ul>
+    <hr />
+    <h2>3. detailed System Architecture</h2>
+    <p>The system utilizes a <strong>start-topology</strong> where the central Server node acts as the Single Source of
+        Truth (SSOT), mimicking a centralized ledger with distributed access points.</p>
+    <h3>3.1 Module Interaction Diagram</h3>
+    <div class="codehilite">
+        <pre><span></span><code>[ Sender Client ]       [ Dashboard ]        [ Receiver Client ]
+       |                      |                      |
+       | (JSON/WS)            | (JSON/WS)            | (JSON/WS)
+       v                      v                      v
++------------------------------------------------------------+
+|                       SERVER NODE                          |
++------------------------------------------------------------+
+|  1. Network Interface (AsyncIO / WebSockets)               |
+|------------------------------------------------------------|
+|  2. Validation Layer                                       |
+|     --&gt; Syntax Check --&gt; Crypto Check --&gt; [ FRAUD ENGINE ] |
+|                                                 |          |
+|         (Score: 0.95) &lt;--- [ XGBoost ] &lt;--------+          |
+|             |                                              |
+|             v                                              |
+|  3. Mempool (Priority Queue)                               |
+|------------------------------------------------------------|
+|  4. Consensus Layer (Miner)                                |
+|     --&gt; Select Tx --&gt; Merkle Tree --&gt; Find Nonce (PoW)     |
+|------------------------------------------------------------|
+|  5. Storage Layer (Blockchain List / JSON Backup)          |
++------------------------------------------------------------+
+</code></pre>
+    </div>
+
+    <h3>3.2 Component Details</h3>
+    <h4>A. The Intelligent Validator (Fraud Engine)</h4>
+    <p>Unlike standard blockchains that only verify digital signatures, our Validator includes a semantic check.
+        * <strong>Input</strong>: <code>Tx = {sender, receiver, amount, timestamp}</code>
+        * <strong>Logic</strong>:
+        * <code>Risk = (0.4 * RF_Prob) + (0.6 * XGB_Prob)</code>
+        * If <code>Tx.Amount &gt; 500,000</code>, add penalty <code>+0.2</code>.
+        * <strong>Thresholding</strong>:
+        * <code>Risk &lt; 0.2</code>: <strong>SAFE</strong> (Green)
+        * <code>0.2 &lt;= Risk &lt; 0.6</code>: <strong>WARN</strong> (Yellow)
+        * <code>Risk &gt;= 0.6</code>: <strong>FRAUD</strong> (Red) - Reject from Mempool.</p>
+    <h4>B. The Mining Loop</h4>
+    <p>A continuous <code>while True</code> loop running in a separate thread/task:
+        1. Check if <code>len(mempool) &gt; 0</code>.
+        2. Select top $N$ transactions.
+        3. Calculate <code>MerkleRoot(transactions)</code>.
+        4. Construct <code>BlockHeader</code>.
+        5. <strong>Brute Force</strong>: Increment <code>Nonce</code> until <code>SHA256(BlockHeader)</code> starts with
+        <code>00</code>.
+        6. On success: Clear processed transactions from Mempool and Broadcast <code>BLOCK_MINED</code> event.</p>
+    <h4>C. Data Structures</h4>
+    <div class="codehilite">
+        <pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Transaction</span><span class="p">:</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span>           <span class="c1"># UUID4</span>
+    <span class="n">sender</span><span class="p">:</span> <span class="nb">str</span>       <span class="c1"># Strings</span>
+    <span class="n">receiver</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">amount</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">signature</span><span class="p">:</span> <span class="nb">str</span>    <span class="c1"># Hex</span>
+    <span class="n">fraud_score</span><span class="p">:</span> <span class="nb">float</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Block</span><span class="p">:</span>
+    <span class="n">index</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">timestamp</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">transactions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Transaction</span><span class="p">]</span>
+    <span class="n">previous_hash</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">nonce</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="nb">hash</span><span class="p">:</span> <span class="nb">str</span>         <span class="c1"># The Self-Reference Hash</span>
+</code></pre>
+    </div>
+
+    <hr />
+    <h2>4. Evaluation Metrics</h2>
+    <h3>4.1 Performance (System Throughput)</h3>
+    <ul>
+        <li><strong>TPS (Transactions Per Second)</strong>: Measured under stress test conditions.<ul>
+                <li><em>Target</em>: &gt; 50 TPS validation speed.</li>
+                <li><em>Bottleneck</em>: The single-threaded Python Global Interpreter Lock (GIL) and PoW calculation.
+                </li>
+            </ul>
+        </li>
+        <li><strong>Latency</strong>: Time difference between <code>Tx_Sent</code> and <code>Block_Confirmed</code>.
+        </li>
+    </ul>
+    <h3>4.2 Accuracy (Fraud Detection)</h3>
+    <ul>
+        <li><strong>Precision/Recall</strong>: Validated against the test split of the dataset.<ul>
+                <li><em>Target Precision</em>: &gt; 95% (minimize false accusations).</li>
+                <li><em>Target Recall</em>: &gt; 90% (catch most fraud).</li>
+            </ul>
+        </li>
+        <li><strong>AUC-ROC</strong>: The Area Under the Curve metric will be used to select the optimal operating
+            threshold.</li>
+    </ul>
+    <hr />
+    <h2>5. Novelty and Future Scope</h2>
+    <h3>5.1 Novel Contributions</h3>
+    <ol>
+        <li><strong>Pre-Consensus Filtering</strong>: Integrating ML inference <em>before</em> the block creation phase
+            creates a cleaner ledger.</li>
+        <li><strong>Hybrid Approach</strong>: Combining rule-based heuristics with deep learning models provides
+            robustness against both known and unknown attack vectors.</li>
+        <li><strong>Visual Observability</strong>: The terminal-based dashboard lowers the barrier to entry for
+            understanding complex blockchain states.</li>
+    </ol>
+    <h3>5.2 Future Scope</h3>
+    <ul>
+        <li><strong>Decentralization</strong>: Shifting from a single Server node to a P2P mesh network using
+            <code>gossip</code> protocol.</li>
+        <li><strong>Smart Contracts</strong>: Implementing a Turing-complete Virtual Machine (VM) to execute logic
+            on-chain.</li>
+        <li><strong>Zero-Knowledge Proofs (ZKP)</strong>: Implementing ZK-SNARKs to validate transaction correctness
+            without revealing the Sender/Receiver identities, enhancing privacy.</li>
+    </ul>
+    <hr />
+    <h2>6. Code Availability</h2>
+    <p>The project implementation, including the blockchain core, fraud engine, and client interfaces, is hosted on
+        GitHub:
+        <strong>Repository</strong>: <a
+            href="https://github.com/Super-cod/Fraud_Bockchain_transaction">https://github.com/Super-cod/Fraud_Bockchain_transaction</a>
+    </p>
+    <h2>7. Conclusion</h2>
+    <p>The proposed architecture provides a robust framework for simulating the next generation of financial
+        infrastructure. By successfully coupling the immutability of blockchains with the predictive power of AI, DA2
+        offers a comprehensive solution for secure, auditable, and intelligent value transfer.</p>
+
+</body>
+
+</html>
